@@ -3,38 +3,29 @@ clear
 
 a = 3;
 b = 0.5;
-gamma = 10;
 
-t = 0:0.01:5;
-[~, y_a] = ode45(@(t, y) g_d_ode(t, y, u1(t), gamma), t, [0; 0; 0; 0; 0]);
-[~, y_b] = ode45(@(t, y) g_d_ode(t, y, u2(t), gamma), t, [0; 0; 0; 0; 0]);
+t = 0:0.01:15;
+[~, y_a] = ode45(@(t, y) L_p_ode(t, y, u2(t)), t, [0; 0; 0; 0]);
+[~, y_b] = ode45(@(t, y) L_ps_ode(t, y, u2(t)), t, [0; 0; 0; 0]);
 
-x_a = y_a(:, 5);
-zeta1_a = y_a(:, 1);
-zeta2_a = y_a(:, 2);
-theta1_a = y_a(:, 3);
-theta2_a = y_a(:, 4);
+x_a = y_a(:, 4);
+x_bar_a = y_a(:, 1);
+theta1_a = y_a(:, 2);
+theta2_a = y_a(:, 3);
 
-a_bar_a = theta1_a + 3;
+a_bar_a = theta1_a;
 b_bar_a = theta2_a;
 
-for i = 1:length(t)
-    x_bar_a(i) = [theta1_a(i) theta2_a(i)]*[zeta1_a(i); zeta2_a(i)];
-end
 
 
-x_b = y_b(:, 5);
-zeta1_b = y_b(:, 1);
-zeta2_b = y_b(:, 2);
-theta1_b = y_b(:, 3);
-theta2_b = y_b(:, 4);
+x_b = y_b(:, 4);
+x_bar_b = y_b(:, 1);
+theta1_b = y_b(:, 2);
+theta2_b = y_b(:, 3);
 
-a_bar_b = theta1_b + 3;
+a_bar_b = theta1_b;
 b_bar_b = theta2_b;
 
-for i = 1:length(t)
-    x_bar_b(i) = [theta1_b(i) theta2_b(i)]*[zeta1_b(i); zeta2_b(i)];
-end
 
 % Results for (a)
 figure(1);
@@ -43,7 +34,7 @@ plot(t, x_bar_a, t, x_a);
 legend('Estimated ODE solution', 'Exact ODE solution');
 title('ODE solutions (a)');
 subplot(2, 1, 2);
-plot(t, x_a-x_bar_a');
+plot(t, x_a-x_bar_a);
 title('Estimated solution error (a)');
 
 figure(2);
@@ -73,7 +64,7 @@ plot(t, x_bar_b, t, x_b);
 legend('Estimated ODE solution', 'Exact ODE solution');
 title('ODE solutions (b)');
 subplot(2, 1, 2);
-plot(t, x_b-x_bar_b');
+plot(t, x_b-x_bar_b);
 title('Estimated solution error (b)');
 
 figure(5);
@@ -97,28 +88,51 @@ plot(t, b-b_bar_b);
 title('b parameter estimation error (b)');
 
 
-function u1 = u1(t)
-    u1 = 10;
-end
 
 function u2 = u2(t)
     u2 = 10*sin(3*t);
 end
 
-function dydt = g_d_ode(t, y, u, gamma)
-    dydt = zeros(5, 1);
-    % zeta1 = y(1)
-    % zeta2 = y(2)
-    % theta1 = y(3)
-    % theta2 = y(4)
-    % x = y(5);
+function [n, dndt] = noise(t)
+    n0 = 0.5;
+    f = 40;
+    n = n0*sin(2*pi*f*t);
+    dndt = 2*pi*f*n0*cos(2*pi*f*t);
+end
+
+function dydt = L_p_ode(t, y, u)
+    dydt = zeros(4, 1);
+    [n, dndt] = noise(t);
+
+    % x_bar = y(1)
+    % theta1 = y(2)
+    % theta2 = y(3)
+    % x = y(4);
     a = 3;
     b = 0.5;
 
-    dydt(5) = -a*y(5) + b*u;
-    e = y(5) - y(3)*y(1) - y(4)*y(2);
-    dydt(1) = y(5) - 3*y(1);
-    dydt(2) = u - 3*y(2);
-    dydt(3) = gamma*e*y(1);
-    dydt(4) = gamma*e*y(2);
+    dydt(4) = -a*y(4) + b*u -dndt - a*n;
+    e = y(4) - y(1) + n;
+    dydt(1) = -y(2)*y(1) + y(3)*u;
+    dydt(2) = -e*y(1);
+    dydt(3) = e*u;
+end
+
+function dydt = L_ps_ode(t, y, u)
+    dydt = zeros(4, 1);
+    [n, dndt] = noise(t);
+
+    % x_bar = y(1)
+    % theta1 = y(2)
+    % theta2 = y(3)
+    % x = y(4);
+    a = 3;
+    b = 0.5;
+    theta_m = 0.5;
+    
+    dydt(4) = -a*y(4) + b*u - dndt - a*n;
+    e = y(4) - y(1) + n;
+    dydt(1) = -y(2)*y(1) + y(3)*u - theta_m*e;
+    dydt(2) = -e*y(1);
+    dydt(3) = e*u;
 end
