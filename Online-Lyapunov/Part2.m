@@ -128,7 +128,7 @@ function dydt = L_ps_ode(t, y, u)
     % x = y(4);
     a = 3;
     b = 0.5;
-    theta_m = 0.5;
+    theta_m = 2;
     
     dydt(4) = -a*y(4) + b*u - dndt - a*n;
     e = y(4) - y(1) + n;
