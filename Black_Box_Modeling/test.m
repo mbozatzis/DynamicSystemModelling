@@ -13,7 +13,11 @@ t = 0:0.001:20;
 % [y2b, ~] = sys(t, f2);
 % y2 = 20*y2a + 60*y2b;
 
-u = @(t) cos(t) + cos(2*t) + cos(3*t);
+u = @(t) cos(t) + cos(2*t) + cos(6*t);
+uin = u(t);
 [y, ts] = sys(t, u);
+y_bar = LeastSquares(t, y, uin);
 
 plot(ts, y);
+hold on;
+plot(ts, y_bar);
